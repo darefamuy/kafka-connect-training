@@ -1,0 +1,45 @@
+{
+  "name": "hci-sink-alert-enriched",
+  "config": {
+    "connector.class": "io.confluent.connect.elasticsearch.ElasticsearchSinkConnector",
+
+    "connection.url":  "http://elasticsearch:9200",
+    "tasks.max":       "2",
+    "topics":          "hci.alerts.enriched.v1",
+
+    "type.name":          "_doc",
+    "key.ignore":         "false",
+    "schema.ignore":      "true",
+
+    "index.auto.create":  "true",
+
+    "behavior.on.null.values": "delete",
+    "behavior.on.malformed.documents": "warn",
+
+    "transforms":                 "routeToIndex,extractKey",
+
+    "transforms.routeToIndex.type":       "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.routeToIndex.renames":    "",
+
+    "transforms.extractKey.type":         "org.apache.kafka.connect.transforms.ExtractField$Key",
+    "transforms.extractKey.field":        "gtin",
+
+    "key.converter":   "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": "false",
+
+    "max.retries":       "10",
+    "retry.backoff.ms":  "3000",
+    "flush.timeout.ms":  "10000",
+    "max.buffered.records": "2000",
+    "batch.size":        "200",
+    "linger.ms":         "5",
+
+    "errors.tolerance":               "all",
+    "errors.log.enable":              "true",
+    "errors.log.include.messages":    "true",
+    "errors.deadletterqueue.topic.name":               "hci.dlq.connect-sink-alert-enriched",
+    "errors.deadletterqueue.topic.replication.factor": "3",
+    "errors.deadletterqueue.context.headers.enable":   "true"
+  }
+}

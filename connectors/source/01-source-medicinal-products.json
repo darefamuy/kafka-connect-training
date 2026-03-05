@@ -1,0 +1,51 @@
+{
+  "name": "hci-source-medicinal-products",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+
+    "connection.url":      "jdbc:postgresql://postgres:5432/hci_pharma",
+    "connection.user":     "hci_user",
+    "connection.password": "hci_secret",
+
+    "topic.prefix":        "hci.",
+    "table.whitelist":     "medicinal_products",
+
+    "mode":                         "timestamp+incrementing",
+    "timestamp.column.name":        "updated_at",
+    "incrementing.column.name":     "id",
+    "timestamp.delay.interval.ms":  "1000",
+
+    "poll.interval.ms":    "5000",
+    "batch.max.rows":      "500",
+    "numeric.mapping":     "best_fit",
+
+    "topic.creation.enable":              "true",
+    "topic.creation.default.replication.factor": "3",
+    "topic.creation.default.partitions":  "6",
+
+    "transforms":                      "renameTable,mapGtin,timestampToMillis",
+
+    "transforms.renameTable.type":            "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.renameTable.renames":         "gtin:gtin,authorization_number:authorizationNumber,product_name:productName,atc_code:atcCode,dosage_form:dosageForm,ex_factory_price_chf:exFactoryPriceCHF,public_price_chf:publicPriceCHF,data_source:dataSource,package_size:packageSize,narcotics_category:narcoticsCategory,marketing_status:marketingStatus,updated_at:lastUpdatedUtc",
+
+    "transforms.mapGtin.type":                "org.apache.kafka.connect.transforms.ValueToKey",
+    "transforms.mapGtin.fields":              "gtin",
+
+    "transforms.timestampToMillis.type":      "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+    "transforms.timestampToMillis.field":     "lastUpdatedUtc",
+    "transforms.timestampToMillis.target.type": "unix",
+
+    "key.converter":                          "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter":                        "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url":    "${env:CONFLUENT_SCHEMA_REGISTRY_URL}",
+    "value.converter.basic.auth.credentials.source": "USER_INFO",
+    "value.converter.basic.auth.user.info":   "${env:CONFLUENT_SR_API_KEY}:${env:CONFLUENT_SR_API_SECRET}",
+
+    "errors.tolerance":               "all",
+    "errors.log.enable":              "true",
+    "errors.log.include.messages":    "true",
+    "errors.deadletterqueue.topic.name":               "hci.dlq.connect-source-products",
+    "errors.deadletterqueue.topic.replication.factor": "3",
+    "errors.deadletterqueue.context.headers.enable":   "true"
+  }
+}

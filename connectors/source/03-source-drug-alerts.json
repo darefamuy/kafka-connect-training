@@ -1,0 +1,51 @@
+{
+  "name": "hci-source-drug-alerts",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+
+    "connection.url":      "jdbc:postgresql://postgres:5432/hci_pharma",
+    "connection.user":     "hci_user",
+    "connection.password": "hci_secret",
+
+    "topic.prefix":        "hci.",
+    "table.whitelist":     "drug_alerts",
+
+    "mode":                     "incrementing",
+    "incrementing.column.name": "id",
+
+    "poll.interval.ms":    "3000",
+    "batch.max.rows":      "200",
+
+    "topic.creation.enable":              "true",
+    "topic.creation.default.replication.factor": "3",
+    "topic.creation.default.partitions":  "6",
+
+    "transforms":                      "renameFields,setAlertIdAsKey,dropInternalId,convertTimestamp",
+
+    "transforms.renameFields.type":           "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.renameFields.renames":        "alert_id:alertId,gtin:gtin,alert_type:alertType,severity:severity,headline:headline,description:description,affected_lots:affectedLots,issued_by_utc:issuedByUtc,expires_utc:expiresUtc,source_url:sourceUrl",
+
+    "transforms.setAlertIdAsKey.type":        "org.apache.kafka.connect.transforms.ValueToKey",
+    "transforms.setAlertIdAsKey.fields":      "gtin",
+
+    "transforms.dropInternalId.type":         "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.dropInternalId.blacklist":    "id",
+
+    "transforms.convertTimestamp.type":       "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+    "transforms.convertTimestamp.field":      "issuedByUtc",
+    "transforms.convertTimestamp.target.type": "unix",
+
+    "key.converter":                          "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter":                        "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url":    "${env:CONFLUENT_SCHEMA_REGISTRY_URL}",
+    "value.converter.basic.auth.credentials.source": "USER_INFO",
+    "value.converter.basic.auth.user.info":   "${env:CONFLUENT_SR_API_KEY}:${env:CONFLUENT_SR_API_SECRET}",
+
+    "errors.tolerance":               "all",
+    "errors.log.enable":              "true",
+    "errors.log.include.messages":    "true",
+    "errors.deadletterqueue.topic.name":               "hci.dlq.connect-source-alerts",
+    "errors.deadletterqueue.topic.replication.factor": "3",
+    "errors.deadletterqueue.context.headers.enable":   "true"
+  }
+}

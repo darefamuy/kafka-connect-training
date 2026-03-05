@@ -1,0 +1,31 @@
+# =============================================================================
+# Kafka Connect Worker — Custom image with HCI connector plugins
+#
+# Plugins installed:
+#   - confluentinc/kafka-connect-jdbc       (JDBC Source for PostgreSQL)
+#   - confluentinc/kafka-connect-elasticsearch (Elasticsearch Sink)
+#
+# The PostgreSQL JDBC driver is downloaded separately because the JDBC
+# connector ships without a bundled driver (license restrictions).
+# =============================================================================
+
+FROM confluentinc/cp-kafka-connect:7.6.1
+
+# ── Confluent Hub plugins ─────────────────────────────────────────────────────
+# Install JDBC Source connector (version pinned for reproducibility)
+RUN confluent-hub install --no-prompt \
+    confluentinc/kafka-connect-jdbc:10.7.6
+
+# Install Elasticsearch Sink connector
+RUN confluent-hub install --no-prompt \
+    confluentinc/kafka-connect-elasticsearch:14.1.0
+
+# ── PostgreSQL JDBC driver ────────────────────────────────────────────────────
+# The JDBC connector requires a database driver at runtime.
+# We place it in the JDBC connector's lib directory.
+RUN curl -fsSL \
+    "https://jdbc.postgresql.org/download/postgresql-42.7.3.jar" \
+    -o /usr/share/confluent-hub-components/confluentinc-kafka-connect-jdbc/lib/postgresql-42.7.3.jar
+
+# ── Verify plugins are present ────────────────────────────────────────────────
+RUN ls /usr/share/confluent-hub-components/

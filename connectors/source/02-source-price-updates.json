@@ -1,0 +1,54 @@
+{
+  "name": "hci-source-price-updates",
+  "config": {
+    "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
+
+    "connection.url":      "jdbc:postgresql://postgres:5432/hci_pharma",
+    "connection.user":     "hci_user",
+    "connection.password": "hci_secret",
+
+    "topic.prefix":        "hci.",
+    "table.whitelist":     "price_updates",
+
+    "mode":                         "timestamp+incrementing",
+    "timestamp.column.name":        "created_at",
+    "incrementing.column.name":     "id",
+    "timestamp.delay.interval.ms":  "1000",
+
+    "poll.interval.ms":    "5000",
+    "batch.max.rows":      "1000",
+    "numeric.mapping":     "best_fit",
+
+    "topic.creation.enable":              "true",
+    "topic.creation.default.replication.factor": "3",
+    "topic.creation.default.partitions":  "6",
+
+    "transforms":                      "renameFields,mapGtin,dropInternalFields",
+
+    "transforms.renameFields.type":           "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.renameFields.renames":        "gtin:gtin,previous_ex_factory_price_chf:previousExFactoryPriceCHF,new_ex_factory_price_chf:newExFactoryPriceCHF,previous_public_price_chf:previousPublicPriceCHF,new_public_price_chf:newPublicPriceCHF,effective_date_utc:effectiveDateUtc,change_reason:changeReason,changed_by:changedBy,approval_reference:approvalReference",
+
+    "transforms.mapGtin.type":                "org.apache.kafka.connect.transforms.ValueToKey",
+    "transforms.mapGtin.fields":              "gtin",
+
+    "transforms.dropInternalFields.type":     "org.apache.kafka.connect.transforms.ReplaceField$Value",
+    "transforms.dropInternalFields.blacklist": "id,created_at",
+
+    "transforms.timestampConvert.type":       "org.apache.kafka.connect.transforms.TimestampConverter$Value",
+    "transforms.timestampConvert.field":      "effectiveDateUtc",
+    "transforms.timestampConvert.target.type": "unix",
+
+    "key.converter":                          "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter":                        "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url":    "${env:CONFLUENT_SCHEMA_REGISTRY_URL}",
+    "value.converter.basic.auth.credentials.source": "USER_INFO",
+    "value.converter.basic.auth.user.info":   "${env:CONFLUENT_SR_API_KEY}:${env:CONFLUENT_SR_API_SECRET}",
+
+    "errors.tolerance":               "all",
+    "errors.log.enable":              "true",
+    "errors.log.include.messages":    "true",
+    "errors.deadletterqueue.topic.name":               "hci.dlq.connect-source-prices",
+    "errors.deadletterqueue.topic.replication.factor": "3",
+    "errors.deadletterqueue.context.headers.enable":   "true"
+  }
+}
