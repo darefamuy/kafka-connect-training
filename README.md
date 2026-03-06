@@ -44,13 +44,13 @@ cp .env.example .env
 # Edit .env and fill in your Confluent Cloud values
 ```
 
+Execute `./scripts/create-topics.sh` to provision relevant Kafka topics on Confluent cloud.
+
 ### 2. Start all local services
 
 ```bash
 docker compose up -d
 ```
-
-Execute `./scripts/create-topics.sh` to provision relevant Kafka topics on Confluent cloud.
 
 This starts PostgreSQL, Elasticsearch, Kibana, Kafka Connect, and the provisioner in order. The provisioner container waits for Connect to be ready, then registers all 8 connectors automatically.
 
